@@ -1,0 +1,392 @@
+<html>
+  <head>
+    <script src="//d3js.org/d3.v3.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Municipal Metrics and Forecasting</title>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+  </head>
+  <style>
+    body {
+      font-family: 'Open Sans', sans-serif;
+      font-size: 12px;}
+    .Category{
+      font-weight: bolder;
+      stroke-width:0.5;
+      font-size: 15px;
+    }
+    #revenues{
+      fill:darkgreen;
+      cursor: pointer;
+    }
+    #expenditures{
+      fill:navy;
+      cursor: pointer;
+    }
+    #negative{
+      fill:red;
+    }
+    .ColumnHead{
+      font-weight: bolder;
+      stroke: black;
+      stroke-width:0.5;
+      font-size: 15px;
+    }
+    .horizontalGraphLine{
+      stroke: grey;
+      stroke-width: 2;
+    }
+    .textBox{
+      fill:none;
+      stroke: grey;
+      stroke-width: 2;
+    }
+    .verticalGraphLine{
+      stroke: grey;
+      stroke-width: 1;
+    }
+    .incrementer{
+      fill: lightgrey;
+      stroke: none;
+      cursor: pointer;
+    }
+    .decrementer{
+      fill: grey;
+      stroke: none;
+      cursor: pointer;
+    }
+    .buttonLabel{
+      font-weight: bolder;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: #000;
+      shape-rendering: crispEdges;
+    }
+    .area.above {
+      fill: firebrick;
+    }
+
+    .area.below {
+      fill: slategrey;
+    }
+
+    .line {
+      fill: none;
+      stroke: #000;
+      stroke-width: 1.5px;
+    }
+    .scenarioButton {
+      cursor: pointer;
+    }
+  </style>
+  <body>
+    <div class="wrapper">
+      <div class="output">
+        <div class="graph"></div>
+        <div class="pivot"></div>
+      </div>
+      <div class="scenarios"></div>
+    </div>
+    <script src="parseAll.js"></script>
+    <script src="drawAll.js"></script>
+    <script type="text/javascript">
+//Global Variables
+      //First Level Data Arrays
+      var expenditures = [],
+          revenues = [];
+      var expenditureButtons = [],
+          revenueButtons = [];
+      //Second Level Data Arrays
+      var graphData = [];
+      //Initial Value of Cutoff Date
+      var initialValue = 2026;
+      var cutoff;
+      //scenarioPositionArray
+      var scenarioPositionArray = [];
+//Add or Remove Scenario Effects to graph Data
+      function addScenario(code, fund, pos, data){
+        var revenuePositionArray = [],
+            expenditurePositionArray = [];
+        var revenueScenarioArray = [],
+            expenditureScenarioArray = [];
+        var index = code-1;
+        if (pos == "on"){
+          scenarioPositionArray[index]++;
+        }
+        else {
+          scenarioPositionArray[index] = 0;
+        }
+        for(var i = 0; i < scenarioPositionArray.length; i++){
+          if(data[i].effcetedFund == "revenues"){
+            revenuePositionArray.push(scenarioPositionArray[i]);
+            revenueScenarioArray.push(data[i]);
+          }
+          else {
+            expenditurePositionArray.push(scenarioPositionArray[i]);
+            expenditureScenarioArray.push(data[i]);
+          }
+        }
+        for(var i = 0; i < 2; i++){
+          var lengthTest = 0;
+          var lengthTestArray = [];
+          var inputArray = [];
+          var clone = [];
+          var foo = [];
+          var row = [];
+          var outfund = "revenues";
+          if (i == 0){
+            inputArray = revenueScenarioArray;
+            lengthTestArray = revenuePositionArray;
+            foo = revenues;
+            clone = revenues.slice();
+          }
+          else {
+            lengthTestArray = expenditurePositionArray;
+            clone = expenditures.slice();
+            foo = expenditures;
+            inputArray = expenditureScenarioArray;
+            outfund = "expenditures";
+          }
+          for (var j = 0; j < lengthTestArray.length; j++){
+            lengthTest += lengthTestArray[j];
+          }
+          if(lengthTest == 0){
+            if(clone.length > 5){
+              clone.pop();
+              foo.pop();
+            }
+              continue;
+          }
+          row2 = [];
+          for (var j = 0; j < clone[clone.length-1].length; j++){
+            row2.push({category: "Scenarios",
+            identifier: fund,
+            fiscalYear: graphData[0][j].fiscalYear,
+            amount: 0,
+            index: (clone.length * clone[0].length)+j,
+            xCoord: j+1,
+            yCoord: clone.length
+            });
+          }
+          for(var j = 0; j < inputArray.length; j++){
+            var k = 0;
+            if(lengthTestArray[j] != 0){
+              for(var property in inputArray[j]){
+                if(inputArray[j].hasOwnProperty(property)){
+                  if(k > 2){
+                    row2[k].amount += inputArray[j][property];
+                    k++;
+                  }
+                  else {
+                    k++;
+                  }
+                }
+              }
+            }
+          }
+          clone[clone.length] = row2;
+          foo[5] = row2;
+          for(var i = 0; i < graphData[0].length; i++){
+
+          }
+        }
+        scenarioDataUpdate(graphData, fund);
+
+      }
+//Scenarios Data Final Push
+      function scenarioDataUpdate(dat, f){
+        for (var i = 0; i < 2; i++){
+          var fundArray = revenues;
+          var fundName = "revenues";
+          if(i == 1){
+            fundArray = expenditures;
+            fundName = "expenditures";
+          }
+          var row = [];
+          for (var j = 0; j < fundArray[0].length; j++){
+            var amountValue = 0;
+            for (var k = 0; k < fundArray.length; k++){
+              amountValue += fundArray[k][j].amount;
+            }
+            row.push({
+              category: fundName,
+              identifier: fundName,
+              fiscalYear: fundArray[0][j].fiscalYear,
+              amount: amountValue,
+              index: (i * graphData[0].length)+j,
+              xCoord: j+1,
+              yCoord: i
+            });
+          }
+          graphData[i]=row;
+        }
+        graphData.pop();
+        var row = [];
+        for (var i = 0; i < graphData[0].length; i++){
+          var amountValue = graphData[0][i].amount - graphData[1][i].amount;
+          row.push({
+            category: "Balance",
+            identifier: "Balance",
+            fiscalYear: fundArray[0][i].fiscalYear,
+            amount: amountValue,
+            index: (2 * graphData[0].length)+i,
+            xCoord: i+1,
+            yCoord: 2
+          });
+        }
+        graphData.push(row)
+        console.log(graphData);
+        pivotControl(graphData, f)
+      }
+//Set or Reset Toggles
+      function updateScenarios(input, label, code){
+        var scenarioArray = [];
+        var effectedFunds = d3.map(input, function(d){return d.effcetedFund}).keys();
+        for (var i = 0; i < effectedFunds.length; i++){
+          // var row = [];
+          // for( var j = 0; j < graphData[i].length; j++){
+          //   if( j > 2 ){
+          //     row.push({
+          //       category: effectedFunds[i],
+          //       identifier: effectedFunds[i],
+          //       fiscalYear: graphData[i][j].fiscalYear,
+          //       amount: 0,
+          //       index: (i*graphData[i].length)+j,
+          //       xCoord: j+1,
+          //       yCoord: i
+          //     });
+          //   }
+          // }
+          // scenarioArray.push(row);
+        }
+        if(label != "scenarios"){
+
+        }
+        else {
+          for(var i = 0; i < input.length; i++){
+            scenarioPositionArray.push(0);
+          }
+          buttons(input, label);
+        }
+      }
+//Generate Usable Data
+      function makeLevel2Arrays(data, bArray, fund, cut){
+        var fundIndex = 0;
+        var row = [];
+        if (fund == "expenditures"){
+          fundIndex = 1;
+        }
+        for(var i = 0; i < data[0].length; i++){
+          var amountValue = 0;
+          for (var j = 0; j < data.length; j++){
+            amountValue += data[j][i].amount;
+          }
+          row.push({
+            category: fund,
+            identifier: fund,
+            fiscalYear: data[0][i].fiscalYear,
+            amount: amountValue,
+            index: (fundIndex*data[0].length)+i,
+            xCoord: i+1,
+            yCoord: fundIndex
+          });
+        }
+        graphData[fundIndex] = row;
+        if (graphData.length != 1){
+          row = [];
+          for(var j = 0; j < graphData[0].length; j++){
+            var checkRev = graphData[0][j].amount;
+            var checkExp = graphData[1][j].amount
+            row.push({
+              category: "Balance",
+              identifier: "Balance",
+              fiscalYear: graphData[0][j].fiscalYear,
+              amount: checkRev-checkExp,
+              index: (2*data[0].length)+j,
+              xCoord: j+1,
+              yCoord: 2
+            });
+          }
+          graphData[2] = row;
+          var tableData = graphData;
+          pivotControl(tableData, "total");
+          parseScenarios("CA_GeneralFund_Scenarios.csv", "scenarios");
+        }
+      }
+//Data Updating Function (From Table)
+      function updateLevel2Arrays(fund, data){
+        scenarioitems = data;
+        var row = [];
+        var fundIndex = 0;
+        var fundLength = revenues.length;
+        var pivotedFundArray;
+        var pivotButtons = revenueButtons;
+        if (fund == "expenditures"){
+          fundIndex = 1;
+          fundLength = expenditures.length + 1;
+          pivotButtons = expenditureButtons;
+        }
+        pivotedFundArray = data.slice(fundIndex, fundLength);
+        if (pivotedFundArray.length > 5){
+          pivotedFundArray.pop();
+        }
+        for(var i = 0; i < pivotedFundArray.length; i++){
+          var columnKey = 2016;
+          for(var k = 0; k < data[0].length; k++){
+            if(k >= 3){
+              pivotedFundArray[i][k].amount = pivotedFundArray[i][k-1].amount * (1+((pivotButtons[((i)*10)+(k-3)].value)/100));
+            }
+          }
+        }
+        pivotedFundArray = data.slice(fundIndex, fundLength);
+        graphData.pop();
+        for (var i = 0; i < pivotedFundArray[0].length; i ++) {
+          var amountValue = 0;
+          for (var j = 0; j < pivotedFundArray.length; j++){
+            amountValue += pivotedFundArray[j][i].amount;
+          }
+          row.push({
+            category: fund,
+            identifier: fund,
+            fiscalYear: pivotedFundArray[0][i].fiscalYear,
+            amount: amountValue,
+            index: (fundIndex*pivotedFundArray[0].length)+i,
+            xCoord: i+1,
+            yCoord: fundIndex
+          });
+        }
+        graphData[fundIndex] = row;
+        row = [];
+        for (var i = 0; i < graphData[0].length; i++){
+          row.push({
+            category: "Balance",
+            identifier: "Balance",
+            fiscalYear: pivotedFundArray[0][i].fiscalYear,
+            amount: (graphData[0][i].amount) - (graphData[1][i].amount),
+            index: (2*pivotedFundArray[0].length)+i,
+            xCoord: i+1,
+            yCoord: 2
+          });
+        }
+        graphData[2] = row;
+        var tableData = graphData;
+        pivotControl(tableData, fund);
+      }
+//Data Parsing Function
+      function initializeParsing (cut){
+        cutoff = cut;
+        twoStepParse("CA_GeneralFund_Projection.csv", "revenues", revenueButtons, cut);
+        twoStepParse("CA_GeneralFund_Projection.csv", "expenditures", expenditureButtons, cut);
+      }
+//Capitalize Function Redefine
+      String.prototype.capitalize = function(lower) {
+      return (lower ? this.toLowerCase() : this).replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+      };
+//InitialCall
+      initializeParsing (initialValue);
+    </script>
+  </body>
