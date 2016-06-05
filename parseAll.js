@@ -131,6 +131,7 @@
 //Parse Through Scenario Data and Output Selected
   parseScenarios = function(input, label){
     d3.csv(input, typeThree, function(data){
+      scenariosArray = data;
       updateScenarios(data, label);
     });
   }
