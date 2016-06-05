@@ -84,7 +84,7 @@
     //Size the Drawing
     var tW = (columnHeaders.length + 1)*80,
         tH = (data.length)*45;
-    var tB = {t: 25, b: 0, l: 225, r: 25};
+    var tB = {t: 25, b: 0, l: 225, r: 175};
     var svgW = tW + tB.l + tB.r,
         svgH = tH + tB.t + tB.b;
     //Define Scales
@@ -110,12 +110,12 @@
     var headingsG = tableSVG.append("g")
       .attr("class", "Heading")
       .attr("transform", "translate(" +tB.l+ "," +tB.t+ ")")
-    var buttonG = tableSVG.append("g")
+    var inputG = tableSVG.append("g")
       .attr("class", "InputGroup")
       .attr("transform", "translate(" +tB.l+ "," +tB.t+ ")");
-    var incrementG = buttonG.append("g")
+    var incrementG = inputG.append("g")
       .attr("class", "incrementGroup");
-    var decrementG = buttonG.append("g")
+    var decrementG = inputG.append("g")
       .attr("class", "decrementGroup");
     //Create Cells, Grid Add Text
     var celW = tableXScale.rangeBand();
@@ -172,8 +172,77 @@
         .attr("y", -3)
         .attr("text-anchor", "middle")
         .text(function(d){ return d.head;});
-    //Buttons
+    //Buttons, Interaction etc.
     if (fund != "total"){
+
+
+
+
+      //Load different % data
+      var yStep = celH*(20/19);
+      var xStep = celW*(20/19);
+      var optionGY = yStep*(1/20)
+      var optionGX = svgW - ((xStep)*1.5) - tB.l;
+      var optionG = inputG.append("g")
+        .attr("class", "tableDropDowns")
+        .attr("transform", "translate(" + optionGX + "," + optionGY + ")");
+      var optionBoxRWidth = (tableXScale.rangeBand())*1.5,
+          optionBoxRHeight = (yStep)*0.5,
+          optionBoxTRadius = optionBoxRHeight/4,
+          optionBoxBRadius = optionBoxRHeight/4;
+      var optionRowG = optionG.selectAll("g").data(rowDomain.slice(pivotIndex, pivotIndex+5))
+        .enter().append("g")
+        .attr("class", "OptionSVG")
+        .attr("index", function(d){ return rowDomain.slice(pivotIndex, pivotIndex+5).indexOf(d);})
+        // .on("click", function(d){dropdown(d, this)})
+        .style("filter", "url(#drop-shadow)")
+        .on("mouseover", function(d){this.style.filter = "url(#hover-shadow)";})
+        .on("mouseleave", function(d){this.style.filter = "url(#drop-shadow)";})
+        .attr("transform", function(d){ return "translate(0, " + ((tableYScale(d)) + ((tableYScale.rangeBand())*(20/19))*0.25) + ")";})
+      var optionGeometryG = optionRowG.append("g")
+        .attr("class", "optionGeometry")
+        .attr("index", function(d){ return rowDomain.slice(pivotIndex, pivotIndex+5).indexOf(d);})
+        .attr("onclick", "attemptTwo(this," +optionBoxRWidth + "," + optionBoxRHeight + "," + optionBoxTRadius + "," + optionBoxBRadius + "," + tableYScale + "," + data.length + ")")
+      var optionTextG = optionRowG.append("g")
+        .attr("class", "optionText")
+        .attr("index", function(d){ return rowDomain.slice(pivotIndex, pivotIndex+5).indexOf(d);})
+      var optionBoxR = optionGeometryG.append("path")
+        .attr("class", "optionBoxR")
+        .attr("d", function(d){
+          return "M" + 0 + "," + 0
+               + "h" + (optionBoxRWidth - optionBoxTRadius)
+               + "a" + optionBoxTRadius + "," + optionBoxTRadius + " 0 0 1 " + optionBoxTRadius + "," + optionBoxTRadius
+               + "v" + (optionBoxRHeight - optionBoxTRadius - optionBoxBRadius)
+               + "a" + optionBoxBRadius + "," + optionBoxBRadius + " 0 0 1 " + -optionBoxBRadius + "," + optionBoxBRadius
+               + "h" + (optionBoxBRadius - optionBoxRWidth)
+               + "z"; })
+        .attr( {"fill": "ghostwhite",
+                "stroke": "black",
+                "stroke-width": "1"});
+        //
+      var optionBoxLHeight = (yStep)*0.5,
+          optionBoxL = optionGeometryG.append("path")
+        .attr("class", "optionBoxL")
+        .attr("d", function(d){
+          return "M" + 0 + "," + optionBoxLHeight
+               + "h" + (optionBoxTRadius - optionBoxLHeight)
+               + "a" + optionBoxTRadius + "," + optionBoxTRadius + " 0 0 1 " + -optionBoxTRadius + "," + -optionBoxTRadius
+               + "v" + ((2 * optionBoxTRadius) - optionBoxLHeight)
+               + "a" + optionBoxTRadius + "," + optionBoxTRadius + " 0 0 1 " + optionBoxTRadius + "," + -optionBoxTRadius
+               + "h" + (optionBoxLHeight - optionBoxTRadius)
+               + "z"; })
+        .attr( {"fill": "aliceblue",
+                "stroke": "black",
+                "stroke-width": "1"});
+      var optionDefaultTxt = optionTextG.append("text")
+        .attr("class", "optionActiveText")
+        .attr("x", function(d){ return (tableXScale.rangeBand())*0.75;})
+        .attr("y", function(d){ return ((yStep)*0.25) + 5;})
+        .attr("font-weight", "bold")
+        .attr("pointer-events", "none")
+        .style("text-anchor", "middle")
+        .text("Default")
+      //Add The Pivoted Fund Name
       var pivotedFundNameG = tableG.append("g")
         .attr("class", "pivotedFundName");
       var pivotedFundName = pivotedFundNameG.selectAll("text").data(fund)
@@ -186,7 +255,8 @@
           .style("text-anchor", "middle")
           .text(function(d){return fund.capitalize(true);})
           .on("click", function(d){expandOrCollapse(this.id, data, fund)});
-      var valueG = buttonG.append("g")
+      //Add the % values
+      var valueG = inputG.append("g")
         .attr("class", "ButtonValue");
       var incrementer = incrementG.selectAll("rect").data(pivotButtons)
         .enter().append("rect")
@@ -238,7 +308,141 @@
         .text(function(d){ return inputFormat(d.value/100);});
     }
   }
+function attemptTwo(input, width, height, top, bottom, scale, numRows){
+  var thisIndex = d3.select(input).attr("index");
+  var svgH = d3.select("svg.table").property("scrollHeight");
+  d3.select(input).select("g.optionTextG").select("text")
+    .attr("pointer-events", "auto")
+    .attr("onclick", "optionUnclickTwo(this", + input + "," + width  + "," + height + "," + top + "," + bottom + "," + scale);
+  var optionGeometryGroupArray = d3.selectAll("g.OptionSVG")[0];
+  for(var i = 0; i < optionGeometryGroupArray.length; i ++){
+    var tempData = optionGeometryGroupArray[i]["__data__"];
+    var initialTranslate = (i * height * 2) + ((height * 2)/19) + height/2;
+    d3.select(optionGeometryGroupArray[i])
+      .transition()
+        .attr("transform", "translate(0, " + initialTranslate + ")")
+    if(thisIndex > 2){
+      var offset = i*height;
+      var newTranslateY = offset;
+      if(thisIndex < i+1){
+        continue;
+      }
+        d3.select(optionGeometryGroupArray[i])
+          .transition()
+            .attr("transform", "translate(0, " + newTranslateY + ")")
+    }
+    else{
+      var offset = (i - optionGeometryGroupArray.length) * height;
+      var newTranslateY = (svgH-35) + offset;
+      if(thisIndex > i - 1){
+        continue;
+      }
+        d3.select(optionGeometryGroupArray[i])
+          .transition()
+            .attr("transform", "translate(0, " + newTranslateY + ")")
+    }
+  }
 
+}
+
+function dropdownUnClick(input, width, height, top, bottom, scale, t){
+  console.log("unclick");
+  d3.selectAll("g.OptionSVG")
+  var oldPath = "M" + 0 + "," + 0
+       + "h" + (width - top)
+       + "a" + top + "," + top + " 0 0 1 " + top + "," + top
+       + "v" + (height - top - bottom)
+       + "a" + bottom + "," + bottom + " 0 0 1 " + -bottom + "," + bottom
+       + "h" + (bottom - width)
+       + "z";
+  d3.select(input).select("path.optionBoxR")
+    .transition()
+      .attr("d", oldPath)
+  var allTheGroupsArray = d3.selectAll("g.OptionSVG")[0];
+  for(var i = 0; i < allTheGroupsArray.length; i++){
+    var d = d3.selectAll("g.OptionSVG")[0][i]["__data__"];
+    d3.select(allTheGroupsArray[i])
+      .style("filter", "url(#drop-shadow)")
+      .attr("pointer-events", "auto")
+      .on("mouseover", function(d){this.style.filter = "url(#hover-shadow)";})
+      .on("mouseleave", function(d){this.style.filter = "url(#drop-shadow)";})
+      .transition()
+        .attr("transform", "translate(0, " + ((scale(d)) + ((scale.rangeBand())*(20/19))*0.15) + ")");
+    d3.select(allTheGroupsArray[i]).selectAll("text")
+      .attr("onClick", null)
+      .attr("pointer-events", "none");
+  }
+  // d3.selectAll("g.OptionSVG").on("click", .on("click", function(d){ dropdownClick(this, width, height, top, bottom, scale, d)}))
+}
+function dropdownClick(input, width, height, top, bottom, scale, d){
+  console.log(d3.select(input));
+  var selectedIndex = d3.select(input)[0][0].attributes[1].value;
+  var allTheGroupsArray = d3.selectAll("g.optionGeometry")[0][0];
+  var svgH = d3.select("svg.table").property("scrollHeight");
+  for (var i = 0; i < allTheGroupsArray.length; i++){
+    d3.select(allTheGroupsArray)[i].attributes[3].value = null;
+    if (i != selectedIndex){
+      d3.select(allTheGroupsArray[i])
+        .on("mouseover", function(_){ this.style.filter = null;})
+        .on("mouseleave", function(_){ this.style.filter = null;})
+    }
+    else {
+      d3.select(allTheGroupsArray[i])
+        .on("mouseover", function(_){ this.style.filter = "url(#drop-shadow)";})
+        .on("mouseleave", function(_){ this.style.filter = null;})
+    }
+    var tempIndex = allTheGroupsArray[i].attributes[1].value;
+    var offset = (allTheGroupsArray.length - i) * height;
+    var newTranslateY = svgH - offset - 35;
+    if(selectedIndex > 2){
+      offset = i*height;
+      newTranslateY = offset;
+      if(selectedIndex < i+1){
+        continue;
+      }
+      d3.select(allTheGroupsArray[i])
+        .transition()
+          .attr("transform", "translate(0, " + newTranslateY + ")")
+    }
+    else{
+      if(selectedIndex > i-1){
+        continue;
+      }
+      d3.select(allTheGroupsArray[i])
+        .transition()
+          .attr("transform", "translate(0, " + newTranslateY + ")")
+    }
+  }
+  var offset = (allTheGroupsArray.length - selectedIndex) * height;
+  var newHeight = (svgH - offset - 35) - scale(d);
+  var newPath = "M" + 0 + "," + 0
+       + "h" + (width - top)
+       + "a" + top + "," + top + " 0 0 1 " + top + "," + top
+       + "v" + (newHeight - top - 0)
+       + "a" + 0 + "," + 0 + " 0 0 1 " + -0 + "," + 0
+       + "h" + (0 - width)
+       + "z";
+  if (selectedIndex > 2){
+    newHeight = (scale(d) + 35) - ((i-1)*height);
+    var newY = (scale(d) + 35) - (i*height);
+    var newPath = "M" + 0 + "," + -newY
+         + "h" + (width - 0)
+         + "a" + 0 + "," + 0 + " 0 0 1 " + 0 + "," + 0
+         + "v" + (newHeight - top - 0)
+         + "a" + top + "," + top + " 0 0 1 " + -top + "," + top
+         + "h" + (top - width)
+         + "z";
+  }
+  d3.selectAll("g.OptionSVG")
+    .attr("pointer-events", "none")
+  d3.select(input).select("path.optionBoxR")
+    .transition()
+    .attr("d", newPath)
+  d3.select(input).select("text")
+    .attr("pointer-events", "auto")
+    .attr("cursor", "pointer")
+    .on("click", function(_){dropdownUnClick(input, width, height, top, bottom, scale, this)})
+}
 //Graph Drawing Function
   graph = function (data, fund){
     var celW = 84.679715302491;
@@ -389,6 +593,7 @@
           .text("$ in Millions");
     }
   }
+
 //Data Incrementing and Decrementing
   function decrement(d, data, buttonz, fundType){
     if(d3.event.shiftKey){
@@ -418,16 +623,7 @@
     }
   }
 
-//Scenario Button Unpress
-  function scenarioUnPress(d, object, data){
-    d3.select(object)
-      .attr("fill", "ghostwhite")
-      .on("mouseover", function(d){this.style.filter = "url(#hover-shadow)";})
-      .on("mouseleave", function(d){this.style.filter = "url(#drop-shadow)";})
-      .on("click", function(d){scenarioPress(d, this, data);});
-    addScenario(d.buttonCode, d.effcetedFund, "off", data);
-  }
-//Scenario Button Press
+//Scenario Button Press/Unpress Functionality
   function scenarioPress(d, object, data){
     d3.select(object)
       .attr("fill", "whitesmoke")
@@ -436,7 +632,16 @@
       .on("click", function(_){ scenarioUnPress(d, this, data);})
     addScenario(d.buttonCode, d.effcetedFund, "on", data);
   }
-//Draw Your Buttons
+  function scenarioUnPress(d, object, data){
+    d3.select(object)
+      .attr("fill", "ghostwhite")
+      .on("mouseover", function(d){this.style.filter = "url(#hover-shadow)";})
+      .on("mouseleave", function(d){this.style.filter = "url(#drop-shadow)";})
+      .on("click", function(d){scenarioPress(d, this, data);});
+    addScenario(d.buttonCode, d.effcetedFund, "off", data);
+  }
+
+//Draw Scenario Buttons
   buttons = function(data, classSelect){
     //First Selection and Removal
     var remove = "svg." + classSelect + "Buttons";
@@ -471,7 +676,7 @@
     var numberOfColumns = initialValue - 2013;
     var bW = 225,
         bH = numberOfRows*50,
-        bB = {t: 25, b: 25, l: 25, r:25 };
+        bB = {t: 25, b: 25, l: 25, r:225 };
     if (classSelect == "scenarios"){
       bB.l = 225 + 89.6797153024911;
       bW = (d3.select("svg.table").property("scrollWidth")) - bB.l - bB.r;
@@ -529,29 +734,28 @@
       .attr("in", "offsetBlur")
     sourceMerge.append("feMergeNode")
       .attr("in", "SourceGraphic");
-      var shadowtext = defs.append("filter")
-        .attr("id", "text-shadow")
-        .attr("height", "175%");
-      shadowtext.append("feGaussianBlur")
-        .attr("in", "SourceAlpha")
-        .attr("stdDeviation", 2)
-        .attr("result", "blur");
-      shadowtext.append("feOffset")
-        .attr("in", "blur")
-        .attr("dx", 1)
-        .attr("dy", 1)
-        .attr("result", "offsetBlur");
-      var textMerge = shadowtext.append("feMerge")
-      textMerge.append("feMergeNode")
-        .attr("in", "offsetBlur")
-      textMerge.append("feMergeNode")
-        .attr("in", "SourceGraphic");
+    var shadowtext = defs.append("filter")
+      .attr("id", "text-shadow")
+      .attr("height", "175%");
+    shadowtext.append("feGaussianBlur")
+      .attr("in", "SourceAlpha")
+      .attr("stdDeviation", 2)
+      .attr("result", "blur");
+    shadowtext.append("feOffset")
+      .attr("in", "blur")
+      .attr("dx", 1)
+      .attr("dy", 1)
+      .attr("result", "offsetBlur");
+    var textMerge = shadowtext.append("feMerge")
+    textMerge.append("feMergeNode")
+      .attr("in", "offsetBlur")
+    textMerge.append("feMergeNode")
+      .attr("in", "SourceGraphic");
     //Add Buttons
-    var buttonG = formG.selectAll("g").data(data)
+    var inputG = formG.selectAll("g").data(data)
       .enter().append("g")
       .attr("transform", function(d){
         var index = d.buttonCode;
-
         var x, y;
         for (var i = 0; i < numberOfRows; i++){
           x = index - (numberOfButtonsPerRow * i);
@@ -561,7 +765,7 @@
           }
         }
       });
-    var press = buttonG.append("rect")
+    var press = inputG.append("rect")
       .attr("class", "scenarioButton")
       .attr("width", buttonW)
       .attr("height", buttonH)
@@ -574,7 +778,7 @@
       .on("mouseover", function(d){this.style.filter = "url(#hover-shadow)";})
       .on("mouseleave", function(d){this.style.filter = "url(#drop-shadow)";})
       .on("click", function(d){scenarioPress(d, this, data);});
-    buttonG.append("text")
+    inputG.append("text")
       .attr("y", buttonH/2)
       .attr("dy", 1.1)
       .attr("font-weight", "bolder")
@@ -585,17 +789,19 @@
       // .style("filter", "url(#text-shadow)")
       .attr("alignment-baseline", "middle")
       .text(function(d){ return d.title.capitalize(true);});
-    buttonG.selectAll("text")
-      .call(wrap, buttonW-5)
+    inputG.selectAll("text")
+      .call(wrap, buttonW-5);
+    scenarioForm(classSelect);
   }
 
+//Centers and wraps text based on its bounding box width no overflow solutions yet...
   function wrap(text, width) {
     text.each(function() {
       var text = d3.select(this),
           words = text.text().split(/\s+/).reverse(),
           word,
           line = [],
-          lineNumber = 0,
+          lineNumber = 0, // row
           lineHeight = 1.1, // ems
           y = text.attr("y"),
           dy = parseFloat(text.attr("dy")),
@@ -614,3 +820,217 @@
         text.attr("transform", "translate(0, " + (lineNumber+1.5)*(-6) + ")");
     });
   }
+
+//Appends the new scenario data if and only if the form is properly filled out
+  function addNewScenarioData(input){
+    var scenarioValues = [];
+    var newFund = input.form.elements.newScenarioFund.value.toLowerCase(),
+        newName = input.form.elements.newScenarioName.value,
+        newCode = scenariosArray.length+1;
+        newVals = [];
+    if(!newFund || !newName){
+
+    }
+    if(newFund != "revenues" && newFund != "expenditures"){
+      console.log('"' + newFund.capitalize(true) + '"' + " is not one of the funds. Please try again.");
+      return;
+    }
+    for (var i = 0; i < input.form.elements.newScenarioAmount.length; i++){
+      if (!input.form.elements.newScenarioAmount[i].value){
+      newVal = 0;
+      }
+      else {
+      newVal = input.form.elements.newScenarioAmount[i].value;
+      }
+      scenarioValues.push(+newVal);
+    }
+    if(!newFund || !newFund){
+      return;
+    }
+    else{
+      var newScenarioObject = {
+        "buttonCode": newCode,
+        "effcetedFund": newFund,
+        "title": newName,
+        "2017-18": scenarioValues[0],
+        "2018-19": scenarioValues[1],
+        "2019-20": scenarioValues[2],
+        "2020-21": scenarioValues[3],
+        "2021-22": scenarioValues[4],
+        "2022-23": scenarioValues[5],
+        "2023-24": scenarioValues[6],
+        "2024-25": scenarioValues[7],
+        "2025-26": scenarioValues[8],
+        "2026-27": scenarioValues[9]
+      }
+      scenariosArray.push(newScenarioObject);
+      updateScenarios(scenariosArray, "scenarios");
+      input.form.reset;
+    }
+  }
+
+//Form for making new scenarios (will be built in SVG eventually...)
+  function scenarioForm (classSelect){
+    var formName = "add" + classSelect.capitalize(true);
+    var remove = "form." + formName;
+    var thisDiv = "div.addSenarioForm";
+    var widthUnit = 89.6797153024911;
+    var numberOfTextInputs = initialValue - 2013;
+    d3.selectAll(remove).remove();
+    var thisForm = d3.select(thisDiv).append("form")
+      .attr("class", formName)
+      .attr("name", formName)
+      .style("width", function(d){return d3.select("svg.table").property("scrollWidth");});
+    var formInputs = thisForm.selectAll("input");
+    for (var i = 0; i < numberOfTextInputs; i++){
+      if (i == 0){
+        thisForm.append("input")
+          .attr("type", "button")
+          .style("border", "1 px dotted #ccc")
+          .style("border-radius", 126.49218433262759/48 + "px")
+          .style("margin-left", 98.50781566737241 + (widthUnit*18/19) + "px")
+          .style("margin-top", 5)
+          .style("width", 126.49218433262759)
+          .style("height", widthUnit/2)
+          .style("padding", "0px, 0px")
+          .style("font-family", "openSans, sans-serif")
+          .style("font-size", "13px")
+          .style("font-weight", "bolder")
+          .style("background", "ghostWhite")
+          .style("border", "1px solid black")
+          .attr("value", "Add Scenario")
+          .attr("onclick", "addNewScenarioData(this)");
+      }
+      else if (i == 1) {
+        thisForm.append("input")
+          .attr("type", "option")
+          .attr("name", "newScenarioFund")
+          .style("border", "1 px dotted #ccc")
+          .style("margin-left", widthUnit/19)
+          .style("margin-top", 5)
+          .style("width", widthUnit - (2*widthUnit/19))
+          .style("height", widthUnit/2)
+          .style("padding", "0px, 0px")
+          .style("font-family", "openSans, sans-serif")
+          .style("font-size", "15px")
+          .style("border", "1px dotted #ccc")
+          .attr("value", null)
+          .attr("placeholder", "Fund");
+      }
+      else if (i == 2){
+        thisForm.append("input")
+          .attr("type", "text")
+          .attr("name", "newScenarioName")
+          .style("border", "1 px dotted #ccc")
+          .style("margin-left", widthUnit/19)
+          .style("margin-top", 5)
+          .style("width", widthUnit*2 - (2.5*widthUnit/19))
+          .style("height", widthUnit/2)
+          .style("padding", "0px, 0px")
+          .style("font-family", "openSans, sans-serif")
+          .style("font-size", "15px")
+          .style("border", "1px dotted #ccc")
+          .attr("value", null)
+          .attr("placeholder", "Scenario Name");
+      }
+      else {
+        thisForm.append("input")
+          .attr("type", "text")
+          .attr("onkeypress", "return event.charCode >= 48 && event.charCode <= 57")
+          .attr("name", "newScenarioAmount")
+          .style("border", "1 px dotted #ccc")
+          .style("margin-left", widthUnit/19)
+          .style("margin-top", 5)
+          .style("width", widthUnit * 18/20)
+          .style("height", widthUnit/2)
+          .style("padding", "0, 0")
+          .style("font-family", "openSans, sans-serif")
+          .style("border", "1px dotted")
+          .style("font-size", "15px")
+          .attr("placeholder", "$");
+      }
+    }
+  }
+
+//Form for making new projection scenarios
+function projectionMethodForm (classSelect){
+  var formName = "add" + classSelect.capitalize(true);
+  var remove = "form." + formName;
+  var thisDiv = "div.addSenarioForm";
+  var widthUnit = 89.6797153024911;
+  var numberOfTextInputs = initialValue - 2013;
+  d3.selectAll(remove).remove();
+  var thisForm = d3.select(thisDiv).append("form")
+    .attr("class", formName)
+    .attr("name", formName)
+    .style("width", function(d){return d3.select("svg.table").property("scrollWidth");});
+  var formInputs = thisForm.selectAll("input");
+  for (var i = 0; i < numberOfTextInputs; i++){
+    if (i == 0){
+      thisForm.append("input")
+        .attr("type", "button")
+        .style("border", "1 px dotted #ccc")
+        .style("border-radius", 126.49218433262759/48 + "px")
+        .style("margin-left", 98.50781566737241 + (widthUnit*18/19) + "px")
+        .style("margin-top", 5)
+        .style("width", 126.49218433262759)
+        .style("height", widthUnit/2)
+        .style("padding", "0px, 0px")
+        .style("font-family", "openSans, sans-serif")
+        .style("font-size", "13px")
+        .style("font-weight", "bolder")
+        .style("background", "ghostWhite")
+        .style("border", "1px solid black")
+        .attr("value", "Add Scenario")
+        .attr("onclick", "addNewScenarioData(this)");
+    }
+    else if (i == 1) {
+      thisForm.append("input")
+        .attr("type", "option")
+        .attr("name", "newScenarioFund")
+        .style("border", "1 px dotted #ccc")
+        .style("margin-left", widthUnit/19)
+        .style("margin-top", 5)
+        .style("width", widthUnit - (2*widthUnit/19))
+        .style("height", widthUnit/2)
+        .style("padding", "0px, 0px")
+        .style("font-family", "openSans, sans-serif")
+        .style("font-size", "15px")
+        .style("border", "1px dotted #ccc")
+        .attr("value", null)
+        .attr("placeholder", "Fund");
+    }
+    else if (i == 2){
+      thisForm.append("input")
+        .attr("type", "text")
+        .attr("name", "newScenarioName")
+        .style("border", "1 px dotted #ccc")
+        .style("margin-left", widthUnit/19)
+        .style("margin-top", 5)
+        .style("width", widthUnit*2 - (2.5*widthUnit/19))
+        .style("height", widthUnit/2)
+        .style("padding", "0px, 0px")
+        .style("font-family", "openSans, sans-serif")
+        .style("font-size", "15px")
+        .style("border", "1px dotted #ccc")
+        .attr("value", null)
+        .attr("placeholder", "Scenario Name");
+    }
+    else {
+      thisForm.append("input")
+        .attr("type", "text")
+        .attr("onkeypress", "return event.charCode >= 48 && event.charCode <= 57")
+        .attr("name", "newScenarioAmount")
+        .style("border", "1 px dotted #ccc")
+        .style("margin-left", widthUnit/19)
+        .style("margin-top", 5)
+        .style("width", widthUnit * 18/20)
+        .style("height", widthUnit/2)
+        .style("padding", "0, 0")
+        .style("font-family", "openSans, sans-serif")
+        .style("border", "1px dotted")
+        .style("font-size", "15px")
+        .attr("placeholder", "$");
+    }
+  }
+}
