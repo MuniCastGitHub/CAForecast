@@ -82,17 +82,28 @@
     .scenarioButton {
       cursor: pointer;
     }
+    .optionBox{
+      cursor: pointer;
+    }
+    .optionActiveText{
+      fill: black;
+      font-weight: bolder;
+      font-size: 14px;
+      stroke: black;
+      stroke-width: 0.125px;
+    }
   </style>
   <body>
     <div class="wrapper">
+      <div class="scenarios"></div>
       <div class="output">
         <div class="graph"></div>
         <div class="pivot"></div>
       </div>
-      <div class="scenarios"></div>
+      <div class="addSenarioForm"></div>
     </div>
-    <script src="parseAll.js"></script>
-    <script src="drawAll.js"></script>
+    <script src="parseAll.js"></script>  <!-- One time data parse on page-load. Creates the initial state data for the index to send to drawALL -->
+    <script src="drawAll.js"></script> <!-- Communicates with index to draw SVGs and Handle Interaction -->
     <script type="text/javascript">
 //Global Variables
       //First Level Data Arrays
@@ -106,6 +117,7 @@
       var initialValue = 2026;
       var cutoff;
       //scenarioPositionArray
+      var scenariosArray = [];
       var scenarioPositionArray = [];
 //Add or Remove Scenario Effects to graph Data
       function addScenario(code, fund, pos, data){
@@ -190,12 +202,8 @@
           }
           clone[clone.length] = row2;
           foo[5] = row2;
-          for(var i = 0; i < graphData[0].length; i++){
-
-          }
         }
         scenarioDataUpdate(graphData, fund);
-
       }
 //Scenarios Data Final Push
       function scenarioDataUpdate(dat, f){
@@ -239,39 +247,18 @@
           });
         }
         graphData.push(row)
-        console.log(graphData);
         pivotControl(graphData, f)
       }
 //Set or Reset Toggles
       function updateScenarios(input, label, code){
-        var scenarioArray = [];
-        var effectedFunds = d3.map(input, function(d){return d.effcetedFund}).keys();
-        for (var i = 0; i < effectedFunds.length; i++){
-          // var row = [];
-          // for( var j = 0; j < graphData[i].length; j++){
-          //   if( j > 2 ){
-          //     row.push({
-          //       category: effectedFunds[i],
-          //       identifier: effectedFunds[i],
-          //       fiscalYear: graphData[i][j].fiscalYear,
-          //       amount: 0,
-          //       index: (i*graphData[i].length)+j,
-          //       xCoord: j+1,
-          //       yCoord: i
-          //     });
-          //   }
-          // }
-          // scenarioArray.push(row);
+        for(var i = 0; i < input.length; i++){
+          scenarioPositionArray[i] = 0;
         }
-        if(label != "scenarios"){
-
+        if (input.length > 7){
+          addScenario(1, "revenues", "off", input);
+          addScenario(2, "expenditures", "off", input);
         }
-        else {
-          for(var i = 0; i < input.length; i++){
-            scenarioPositionArray.push(0);
-          }
-          buttons(input, label);
-        }
+        buttons(input, label);
       }
 //Generate Usable Data
       function makeLevel2Arrays(data, bArray, fund, cut){
